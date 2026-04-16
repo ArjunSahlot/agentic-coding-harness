@@ -188,6 +188,13 @@ cython_debug/
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
+# Local Node.js install
+.node/
+
+# Frontend build output
+web/node_modules/
+web/dist/
+
 # Ruff stuff:
 .ruff_cache/
 
@@ -205,3 +212,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+models/
+
+unsloth_compiled_cache/
