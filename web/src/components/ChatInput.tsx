@@ -37,9 +37,9 @@ export default function ChatInput({ onSend, disabled }: Props) {
   }, []);
 
   return (
-    <div className="border-t border-zinc-800/60 bg-zinc-950 px-6 py-4">
-      <div className="mx-auto flex max-w-3xl items-end gap-3">
-        <div className="relative flex-1">
+    <div className="border-t border-slate-200/80 bg-white/72 px-6 py-4 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-4xl items-end gap-3">
+        <div className="glass-panel relative flex-1 rounded-2xl p-1.5">
           <textarea
             ref={ref}
             value={value}
@@ -49,10 +49,10 @@ export default function ChatInput({ onSend, disabled }: Props) {
             placeholder={disabled ? "Waiting..." : "Message..."}
             rows={1}
             disabled={disabled}
-            className="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-900/80 px-4 py-3 pr-3
-                       text-[13px] text-zinc-100 placeholder-zinc-600 caret-violet-400 outline-none
+            className="w-full resize-none rounded-xl border border-transparent bg-white/70 px-4 py-3 pr-3
+                       text-[13px] text-slate-900 placeholder-slate-400 caret-blue-600 outline-none
                        transition-all duration-200
-                       focus:border-zinc-700 focus:bg-zinc-900 focus:shadow-[0_0_0_1px_rgba(139,92,246,0.1)]
+                       focus:border-blue-200 focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.08)]
                        disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ minHeight: 44, maxHeight: 180 }}
           />
@@ -60,18 +60,19 @@ export default function ChatInput({ onSend, disabled }: Props) {
         <button
           onClick={submit}
           disabled={disabled || !value.trim()}
-          className="flex items-center justify-center size-[44px] shrink-0 rounded-xl
-                     bg-violet-600 text-white transition-all duration-150
-                     hover:bg-violet-500 active:scale-95
+          className="flex items-center justify-center size-[48px] shrink-0 rounded-xl
+                     bg-slate-950 text-white shadow-lg shadow-slate-900/15 transition-all duration-150
+                     hover:bg-blue-600 active:scale-95
                      disabled:opacity-20 disabled:pointer-events-none"
+          aria-label="Send message"
         >
           <svg className="size-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M2 8h12M9 3l5 5-5 5"/>
           </svg>
         </button>
       </div>
-      <div className="mx-auto max-w-3xl mt-1.5">
-        <p className="text-[10px] text-zinc-700 text-center">
+      <div className="mx-auto max-w-4xl mt-1.5">
+        <p className="text-[10px] text-slate-400 text-center">
           Shift+Enter for new line
         </p>
       </div>

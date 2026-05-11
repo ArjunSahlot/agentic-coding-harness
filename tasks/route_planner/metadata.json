@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 12600,
+  "id": "route_planner",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix a dispatch route planner so it uses weighted travel times and edge closure intervals.",
+  "tags": [
+    "graph",
+    "dijkstra",
+    "scheduling"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Route Planner"
+}

@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Package feeds are strings, but SemVer components are numbers. Versions like 1.10.0 must sort after 1.9.9 even though lexical ordering says otherwise.",
+      "title": "numeric ordering"
+    },
+    {
+      "detail": "A yanked release can stay visible for lockfile reproducibility, but new resolution should skip it unless a future policy explicitly pins it. The current resolver never pins yanked versions.",
+      "title": "yanked releases"
+    },
+    {
+      "detail": "Caret ranges are common in ecosystem manifests. The allowed upper bound is sensitive to leading zero components, so 0.2.x and 0.0.x behave differently from 1.x.",
+      "title": "caret ranges"
+    },
+    {
+      "detail": "Release candidates should not appear in ordinary stable ranges. They become eligible only when a constraint operand itself mentions a pre-release version.",
+      "title": "pre-release opt-in"
+    },
+    {
+      "detail": "Resolution should evaluate all constraints first, then choose the maximum SemVer candidate. Early return behavior can pick a lower version by accident.",
+      "title": "highest satisfying candidate"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "semver_resolver",
+  "title": "Semver Resolver"
+}

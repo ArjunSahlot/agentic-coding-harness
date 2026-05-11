@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 11600,
+  "id": "license_audit",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix transitive dependency license auditing with normalized SPDX expressions and package exceptions.",
+  "tags": [
+    "licenses",
+    "graph",
+    "policy"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "License Audit"
+}

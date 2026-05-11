@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Dispatch cares about arrival time, not hop count. A direct road can be slower than two short roads, so the planner needs weighted shortest path behavior.",
+      "title": "earliest arrival"
+    },
+    {
+      "detail": "Road closures are intervals. If traversal would overlap a closure, waiting until the closure end is allowed and may still beat an alternate route.",
+      "title": "closure waits"
+    },
+    {
+      "detail": "Reaching the same node earlier is better, but reaching it later may still matter if an edge opens after a closure. Visited-state shortcuts must not discard useful timing information too aggressively.",
+      "title": "time dependent state"
+    },
+    {
+      "detail": "The benchmark uses integer minutes from an arbitrary epoch. Do not convert to wall-clock datetimes; closure ranges and arrivals are in the same minute coordinate system.",
+      "title": "absolute minutes"
+    },
+    {
+      "detail": "The route result is used for explanations, so it must include the ordered path as well as travel and arrival minutes.",
+      "title": "traceable path"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "route_planner",
+  "title": "Route Planner"
+}

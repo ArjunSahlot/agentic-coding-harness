@@ -18,15 +18,16 @@ type Props = {
 };
 
 const EVENT_COLORS: Record<string, string> = {
-  thinking_delta: "text-sky-400/70",
-  text_delta: "text-zinc-400",
-  text_final: "text-emerald-400/80",
-  gen_stats: "text-fuchsia-400/80",
-  tool_call_pending: "text-amber-400/80",
-  tool_result: "text-emerald-400/80",
-  tool_rejected: "text-red-400/70",
-  error: "text-red-400",
-  done: "text-zinc-500",
+  thinking_delta: "text-sky-600",
+  text_delta: "text-slate-600",
+  text_final: "text-teal-600",
+  gen_stats: "text-blue-600",
+  tool_call_pending: "text-amber-600",
+  tool_result: "text-teal-600",
+  tool_rejected: "text-red-600",
+  token_importance: "text-indigo-600",
+  error: "text-red-700",
+  done: "text-slate-500",
 };
 
 function formatBytes(n: number | undefined | null): string {
@@ -169,14 +170,14 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
   ];
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 text-[11px] font-mono min-w-0">
-      <div className="flex flex-wrap items-center gap-0 border-b border-zinc-800/80 px-1 py-1 shrink-0">
+    <div className="flex h-full min-w-0 flex-col bg-white/86 text-[11px] font-mono text-slate-700 backdrop-blur-xl">
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200/80 px-2 py-2 shrink-0">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-2 py-1.5 rounded text-[9px] uppercase tracking-wider font-medium transition-colors
-              ${tab === t.id ? "bg-violet-500/15 text-violet-300" : "text-zinc-600 hover:text-zinc-400 hover:bg-zinc-900"}`}
+            className={`rounded-md px-2 py-1.5 text-[9px] font-semibold uppercase tracking-wider transition-colors
+              ${tab === t.id ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}
           >
             {t.label}
           </button>
@@ -188,44 +189,44 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
               type="button"
               onClick={() => setAutoScroll(!autoScroll)}
               className={`px-2 py-1 text-[9px] uppercase tracking-wider rounded
-                ${autoScroll ? "text-emerald-400/70" : "text-zinc-600"}`}
+                ${autoScroll ? "text-teal-600" : "text-slate-400"}`}
             >
               auto-scroll
             </button>
-            <button type="button" onClick={onClearLog} className="px-2 py-1 text-[9px] text-zinc-600 hover:text-zinc-400">
+            <button type="button" onClick={onClearLog} className="px-2 py-1 text-[9px] text-slate-400 hover:text-slate-900">
               Clear
             </button>
           </>
         )}
         {tab === "raw" && (
-          <button type="button" onClick={refreshRaw} className="px-2 py-1 text-[9px] text-zinc-600 hover:text-zinc-400">
+          <button type="button" onClick={refreshRaw} className="px-2 py-1 text-[9px] text-slate-400 hover:text-slate-900">
             Refresh
           </button>
         )}
         {tab === "runtime" && (
-          <button type="button" onClick={fetchRuntime} className="px-2 py-1 text-[9px] text-zinc-600 hover:text-zinc-400">
+          <button type="button" onClick={fetchRuntime} className="px-2 py-1 text-[9px] text-slate-400 hover:text-slate-900">
             Refresh
           </button>
         )}
         {tab === "model" && (
-          <button type="button" onClick={fetchModel} className="px-2 py-1 text-[9px] text-zinc-600 hover:text-zinc-400">
+          <button type="button" onClick={fetchModel} className="px-2 py-1 text-[9px] text-slate-400 hover:text-slate-900">
             Refresh
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-auto p-2 min-h-0">
+      <div className="min-h-0 flex-1 overflow-auto p-4">
         {tab === "summary" && (
           <div className="space-y-4">
             <section>
               <h3 className="text-[10px] uppercase tracking-wider text-zinc-600 mb-2">Session</h3>
               <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-zinc-400">
                 <dt className="text-zinc-600">Model</dt>
-                <dd className="text-zinc-300">{modelInfo.current || "—"}</dd>
+                <dd className="text-slate-800">{modelInfo.current || "—"}</dd>
                 <dt className="text-zinc-600">Loaded</dt>
                 <dd>{modelInfo.loaded ? <span className="text-emerald-400/80">yes</span> : <span className="text-zinc-600">no</span>}</dd>
                 <dt className="text-zinc-600">Conversation</dt>
-                <dd className="truncate text-zinc-300">{conversationId || "—"}</dd>
+                <dd className="truncate text-slate-800">{conversationId || "—"}</dd>
                 <dt className="text-zinc-600">Events logged</dt>
                 <dd>{eventLog.length.toLocaleString()}</dd>
                 <dt className="text-zinc-600">Generation rounds</dt>
@@ -370,7 +371,7 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
                 <>
                   <p className="text-zinc-500 mb-2">
                     Total approx tokens (sum of messages):{" "}
-                    <span className="text-violet-400/90 tabular-nums">{formatNum(tokenTotal)}</span>
+                    <span className="text-blue-600 tabular-nums">{formatNum(tokenTotal)}</span>
                   </p>
                   <div className="overflow-x-auto max-h-40 overflow-y-auto">
                     <table className="w-full text-left text-[10px]">
@@ -399,29 +400,29 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
             </section>
 
             <section>
-              <h3 className="text-[10px] uppercase tracking-wider text-zinc-600 mb-2">Tokenize playground</h3>
+              <h3 className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Tokenize playground</h3>
               <textarea
                 value={tokenizeInput}
                 onChange={(e) => setTokenizeInput(e.target.value)}
-                placeholder="Paste text to count tokens…"
+                placeholder="Paste text to inspect tokenizer output..."
                 rows={3}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-900/60 px-2 py-1.5 text-[11px] text-zinc-300 placeholder-zinc-600 resize-y min-h-[60px]"
+                className="min-h-[72px] w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-800 placeholder-slate-400 shadow-sm outline-none focus:border-blue-200 focus:ring-4 focus:ring-blue-500/10"
               />
               <button
                 type="button"
                 onClick={runTokenize}
                 disabled={tokenizeLoading || !modelInfo.loaded}
-                className="mt-1 rounded-md bg-zinc-800 px-2 py-1 text-[10px] text-zinc-300 hover:bg-zinc-700 disabled:opacity-40"
+                className="mt-2 rounded-md bg-slate-950 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-blue-600 disabled:opacity-40"
               >
-                {tokenizeLoading ? "…" : "Tokenize"}
+                {tokenizeLoading ? "..." : "Tokenize"}
               </button>
               {tokenizeResult && !("error" in tokenizeResult) && (
-                <pre className="mt-2 text-[10px] text-zinc-500 bg-zinc-900/40 rounded p-2 overflow-auto max-h-56">
+                <pre className="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-2 text-[10px] text-slate-300">
                   {JSON.stringify(tokenizeResult, null, 2)}
                 </pre>
               )}
               {tokenizeResult && "error" in tokenizeResult && (
-                <p className="mt-2 text-red-400/80">{String((tokenizeResult as { error: string }).error)}</p>
+                <p className="mt-2 text-red-600">{String((tokenizeResult as { error: string }).error)}</p>
               )}
             </section>
 
@@ -457,7 +458,7 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
                   role === "system"
                     ? "text-cyan-400/70"
                     : role === "user"
-                      ? "text-violet-400/70"
+                      ? "text-blue-600"
                       : role === "assistant"
                         ? "text-emerald-400/70"
                         : role === "tool"
@@ -526,7 +527,7 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
                 </details>
               </>
             ) : (
-              <p className="text-zinc-600">Loading…</p>
+              <p className="text-slate-500">Loading...</p>
             )}
           </div>
         )}
@@ -542,7 +543,7 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
                     <dt className="text-zinc-600">Class</dt>
                     <dd>{String(modelPayload.model_class)}</dd>
                     <dt className="text-zinc-600">Path</dt>
-                    <dd className="truncate text-zinc-300">{String(modelPayload.model_path)}</dd>
+                    <dd className="truncate text-slate-800">{String(modelPayload.model_path)}</dd>
                     <dt className="text-zinc-600">Params</dt>
                     <dd>{formatNum(Number(modelPayload.parameters_total))}</dd>
                     <dt className="text-zinc-600">Trainable</dt>
@@ -574,7 +575,7 @@ export default function DevPanel({ conversationId, eventLog, modelInfo, onClearL
                 </>
               )
             ) : (
-              <p className="text-zinc-600">Loading…</p>
+              <p className="text-slate-500">Loading...</p>
             )}
           </div>
         )}

@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "The static site host links directly to GitHub-compatible anchors. Punctuation removal, whitespace collapse, and duplicate suffixes must match the documented behavior closely enough for existing links to keep working.",
+      "title": "slug compatibility"
+    },
+    {
+      "detail": "Documentation authors often include markdown snippets showing intentionally broken links. Fenced code and inline code are instructional examples and should not become link-checker findings.",
+      "title": "example code"
+    },
+    {
+      "detail": "Long pages prefer reference-style links so repeated URLs are easier to maintain. Definitions are case-insensitive and should resolve before relative path normalization.",
+      "title": "reference definitions"
+    },
+    {
+      "detail": "Human-written fragments use spaces and punctuation. The indexer should normalize fragment ids using slug rules, but it should not apply duplicate suffixes across target documents it has not parsed.",
+      "title": "fragment normalization"
+    },
+    {
+      "detail": "HTTP, HTTPS, mailto, and root-relative links are already absolute in their own namespace. Only document-relative links should be joined to the current file directory.",
+      "title": "absolute and external targets"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "markdown_outline",
+  "title": "Markdown Outline Indexer"
+}

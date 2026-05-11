@@ -1,0 +1,19 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 11500,
+  "id": "ledger_proration",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Repair payment allocation logic for a small billing ledger that must conserve cents across cash payments and credits.",
+  "tags": [
+    "finance",
+    "decimal",
+    "rounding",
+    "allocation"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Ledger Proration"
+}

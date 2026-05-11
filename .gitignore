@@ -216,3 +216,6 @@ __marimo__/
 models/
 
 unsloth_compiled_cache/
+
+# Benchmark scratch workspaces
+.benchmark_runs/

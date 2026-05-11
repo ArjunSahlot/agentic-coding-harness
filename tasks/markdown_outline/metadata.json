@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 12200,
+  "id": "markdown_outline",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix a Markdown indexer so it creates GitHub-style heading anchors and link records while ignoring code examples.",
+  "tags": [
+    "markdown",
+    "parser",
+    "normalization"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Markdown Outline Indexer"
+}

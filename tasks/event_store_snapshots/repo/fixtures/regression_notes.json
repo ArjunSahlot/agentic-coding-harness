@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Event files are merged from shards and may arrive out of order. Replay must sort by timestamp and sequence before applying financial effects.",
+      "title": "unordered delivery"
+    },
+    {
+      "detail": "Retried ingestion can duplicate event ids. A duplicate id should be ignored, not rejected as an overdraft and not counted twice in balances.",
+      "title": "idempotent rebuild"
+    },
+    {
+      "detail": "Incremental rebuilds begin from a snapshot with balances and applied ids. The replay should not mutate caller-owned collections in surprising ways if it needs to derive a new state.",
+      "title": "opening snapshots"
+    },
+    {
+      "detail": "Withdrawals and transfers cannot make source balances negative. Rejected events should include a reason and must not be added to applied ids.",
+      "title": "overdraft rejection"
+    },
+    {
+      "detail": "Amounts are strings in event payloads. Decimal conversion keeps replay deterministic for currency values.",
+      "title": "decimal amounts"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "event_store_snapshots",
+  "title": "Event Store Snapshots"
+}

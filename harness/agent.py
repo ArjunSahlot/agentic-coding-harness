@@ -21,6 +21,7 @@ EventType = Literal[
     "tool_call_pending",
     "tool_result",
     "tool_rejected",
+    "token_importance",
     "error",
     "done",
 ]
@@ -44,6 +45,95 @@ DEFAULT_SYSTEM = (
 MAX_TOOL_ROUNDS = 15
 
 THINK_CLOSE_RE = re.compile(r"</think>")
+
+
+def _importance_payload_for_text(
+    importance: dict,
+    full_response: str,
+    text: str,
+    *,
+    target: str,
+    label: str,
+) -> dict | None:
+    """Return generated-token importance clipped to one rendered text segment."""
+    if not text:
+        return None
+    all_tokens = importance.get("tokens")
+    if not isinstance(all_tokens, list):
+        return None
+
+    generated_tokens = [t for t in all_tokens if isinstance(t, dict) and t.get("source") == "generated"]
+    if not generated_tokens:
+        return None
+
+    visible_start = full_response.find(text)
+    if visible_start < 0:
+        return None
+    visible_end = visible_start + len(text)
+
+    cursor = 0
+    visible_tokens: list[dict] = []
+    for token in generated_tokens:
+        text = str(token.get("text", ""))
+        start = cursor
+        end = cursor + len(text)
+        cursor = end
+        if end <= visible_start or start >= visible_end:
+            continue
+        clipped = text[max(0, visible_start - start): len(text) - max(0, end - visible_end)]
+        if not clipped:
+            continue
+        visible_tokens.append({
+            "id": token.get("id"),
+            "token_id": token.get("token_id"),
+            "text": clipped,
+            "score": token.get("score", 0.0),
+            "raw_score": token.get("raw_score", 0.0),
+            "source": f"assistant_{target}",
+        })
+
+    if not visible_tokens:
+        return None
+
+    return {
+        **importance,
+        "label": label,
+        "target": target,
+        "tokens": visible_tokens,
+        "visible_text": text,
+    }
+
+
+def _visible_importance_payloads(
+    importance: dict,
+    full_response: str,
+    *,
+    thinking_text: str,
+    plain_text: str,
+) -> list[dict]:
+    """Build attention-derived heatmaps for each rendered assistant segment."""
+    payloads: list[dict] = []
+    thinking_payload = _importance_payload_for_text(
+        importance,
+        full_response,
+        thinking_text,
+        target="thinking",
+        label="Thought token importance",
+    )
+    if thinking_payload is not None:
+        payloads.append(thinking_payload)
+
+    text_payload = _importance_payload_for_text(
+        importance,
+        full_response,
+        plain_text,
+        target="text",
+        label="Response token importance",
+    )
+    if text_payload is not None:
+        payloads.append(text_payload)
+
+    return payloads
 
 
 class Agent:
@@ -107,6 +197,8 @@ class Agent:
         *,
         temperature: float = 0.6,
         max_new_tokens: int = 4096,
+        token_importance: bool = False,
+        token_importance_interval: int = 8,
     ) -> Iterator[AgentEvent]:
         """Run one generation round.
 
@@ -126,6 +218,8 @@ class Agent:
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             stream=True,
+            token_importance=token_importance,
+            token_importance_interval=token_importance_interval,
         ):
             full_response += token
 
@@ -155,8 +249,11 @@ class Agent:
             stats.update(eng_stats)
         yield AgentEvent(type="gen_stats", data=stats)
 
+        thinking_text = ""
         clean = full_response
         if think_closed and "</think>" in clean:
+            if "<think>" in clean:
+                thinking_text = clean[clean.index("<think>") + len("<think>"): clean.index("</think>")].strip()
             clean = clean[clean.index("</think>") + len("</think>"):]
         clean = clean.strip()
 
@@ -164,12 +261,22 @@ class Agent:
 
         yield AgentEvent(type="text_final", data=plain_text)
 
-        tc_dicts = (
-            [{"function": {"name": tc.name, "arguments": tc.arguments}} for tc in tool_calls]
-            if tool_calls
-            else None
+        importance = getattr(self.engine, "last_token_importance", None)
+        importance_payloads = (
+            _visible_importance_payloads(
+                importance,
+                full_response,
+                thinking_text=thinking_text,
+                plain_text=plain_text,
+            )
+            if token_importance and isinstance(importance, dict) and importance.get("tokens")
+            else []
         )
-        self.conversation.add_assistant(full_response, tool_calls=tc_dicts)
+        if importance_payloads:
+            yield AgentEvent(type="token_importance", data={"segments": importance_payloads})
+
+        metadata = {"token_importance_segments": importance_payloads} if importance_payloads else None
+        self.conversation.add_assistant(full_response, metadata=metadata)
 
         if tool_calls:
             for tc in tool_calls:

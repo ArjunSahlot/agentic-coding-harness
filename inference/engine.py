@@ -41,6 +41,8 @@ class InferenceEngine(Protocol):
         temperature: float = 0.6,
         top_p: float = 0.95,
         stream: bool = True,
+        token_importance: bool = False,
+        token_importance_interval: int = 8,
     ) -> Iterator[str]: ...
 
     def get_attention_weights(self) -> list[tuple[int, torch.Tensor]] | None: ...
@@ -63,6 +65,99 @@ def _cuda_mem_mb() -> tuple[float, float]:
     )
 
 
+def _accumulate_attention_importance(
+    scores: torch.Tensor,
+    attentions,
+    *,
+    key_count: int,
+) -> int:
+    """Add attention received by prior KV entries from the current future query.
+
+    The score estimates how much each token's KV entry is used to predict later
+    tokens. Deeper layers get slightly more weight because their attention is
+    closer to the logits, and low-entropy heads get slightly more weight because
+    focused routing is usually a stronger attribution signal than diffuse mass.
+    """
+    if not attentions:
+        return 0
+
+    device = scores.device
+    total = torch.zeros(key_count, dtype=torch.float32, device=device)
+    total_weight = 0.0
+    layer_count = len(attentions)
+
+    for layer_idx, attn in enumerate(attentions):
+        if not isinstance(attn, torch.Tensor) or attn.numel() == 0:
+            continue
+        # Expected shape: (batch, heads, query_len, key_len). Use only the
+        # newest-query slice. Slicing before conversion avoids materializing a
+        # full fp32 copy of every layer's attention tensor on the GPU.
+        if attn.ndim != 4:
+            continue
+        vec = attn.detach()[0, :, -1, :key_count].to(device=device, dtype=torch.float32)
+        if vec.numel() == 0:
+            continue
+
+        eps = 1e-8
+        head_entropy = -(vec.clamp_min(eps) * vec.clamp_min(eps).log()).sum(dim=-1)
+        max_entropy = max(1.0, float(torch.log(torch.tensor(vec.shape[-1], dtype=torch.float32)).item()))
+        focus = (1.0 - head_entropy / max_entropy).clamp(0.15, 1.0)
+        head_mean = (vec * focus[:, None]).sum(dim=0) / focus.sum().clamp_min(eps)
+        layer_weight = 0.65 + 0.35 * ((layer_idx + 1) / max(1, layer_count))
+        total += head_mean.to(device) * layer_weight
+        total_weight += layer_weight
+
+    if total_weight <= 0:
+        return 0
+
+    scores[:key_count] += total / total_weight
+    return 1
+
+
+def _normalize_importance(raw_scores: torch.Tensor) -> list[float]:
+    if raw_scores.numel() == 0:
+        return []
+    scores = raw_scores.float().clamp_min(0)
+    positive = scores[scores > 0]
+    if positive.numel() == 0:
+        return [0.0 for _ in range(scores.numel())]
+    high = torch.quantile(positive, 0.95).clamp_min(1e-8)
+    normalized = (scores / high).clamp(0, 1)
+    return [round(float(x), 4) for x in normalized.tolist()]
+
+
+def _build_token_importance_payload(
+    *,
+    token_ids: list[int],
+    prompt_len: int,
+    raw_scores: torch.Tensor,
+    renderer: ChatRenderer,
+    observations: int,
+) -> dict:
+    normalized = _normalize_importance(raw_scores)
+    raw = [round(float(x), 6) for x in raw_scores.tolist()]
+    tokens = []
+    for i, token_id in enumerate(token_ids):
+        tokens.append(
+            {
+                "id": i,
+                "token_id": int(token_id),
+                "text": renderer.decode([int(token_id)], skip_special=False),
+                "score": normalized[i] if i < len(normalized) else 0.0,
+                "raw_score": raw[i] if i < len(raw) else 0.0,
+                "source": "prompt" if i < prompt_len else "generated",
+            }
+        )
+    return {
+        "label": "Future attention importance",
+        "method": "attention_received_by_future_decode_queries",
+        "observations": observations,
+        "prompt_tokens": prompt_len,
+        "generated_tokens": max(0, len(token_ids) - prompt_len),
+        "tokens": tokens,
+    }
+
+
 class LocalEngine:
     """Load any HuggingFace-compatible model and generate token-by-token.
 
@@ -79,6 +174,7 @@ class LocalEngine:
         self._model_path: str | None = None
         self._quantization: QuantizationMode = None
         self._last_generation_stats: dict | None = None
+        self._last_token_importance: dict | None = None
 
     @property
     def loaded(self) -> bool:
@@ -87,6 +183,10 @@ class LocalEngine:
     @property
     def last_generation_stats(self) -> dict | None:
         return self._last_generation_stats
+
+    @property
+    def last_token_importance(self) -> dict | None:
+        return self._last_token_importance
 
     def load(
         self,
@@ -113,6 +213,12 @@ class LocalEngine:
         self._quantization = quantization
 
         config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+        # Token-importance capture requires attention tensors. Transformers'
+        # SDPA path refuses output_attentions=True, so load with eager attention.
+        if hasattr(config, "attn_implementation"):
+            config.attn_implementation = "eager"
+        if hasattr(config, "_attn_implementation"):
+            config._attn_implementation = "eager"
 
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -133,6 +239,7 @@ class LocalEngine:
             "config": config,
             "torch_dtype": dtype,
             "trust_remote_code": True,
+            "attn_implementation": "eager",
         }
 
         if quant_config is not None:
@@ -165,6 +272,8 @@ class LocalEngine:
         temperature: float = 0.6,
         top_p: float = 0.95,
         stream: bool = True,
+        token_importance: bool = False,
+        token_importance_interval: int = 8,
     ) -> Iterator[str]:
         assert self.model is not None and self.renderer is not None
         assert self.tokenizer is not None
@@ -175,6 +284,13 @@ class LocalEngine:
         input_ids = self.renderer.render(messages, tools=tools)
         prompt_len = len(input_ids)
         input_tensor = torch.tensor([input_ids], device=self.device, dtype=torch.long)
+        self._last_token_importance = None
+        importance_scores: torch.Tensor | None = (
+            torch.zeros(prompt_len + max_new_tokens, dtype=torch.float32)
+            if token_importance
+            else None
+        )
+        importance_observations = 0
 
         sampler = Sampler(SamplingParams(temperature=temperature, top_p=top_p))
         eos_ids = self._get_eos_ids()
@@ -190,7 +306,11 @@ class LocalEngine:
             with torch.no_grad():
                 # -- Prefill: process the entire prompt, get first token --
                 forward_passes += 1
-                outputs = self.model(input_ids=input_tensor, use_cache=True)
+                outputs = self.model(
+                    input_ids=input_tensor,
+                    use_cache=True,
+                    output_attentions=False,
+                )
                 logits = outputs.logits[:, -1, :]
                 past = outputs.past_key_values
 
@@ -209,11 +329,23 @@ class LocalEngine:
                 for _ in range(max_new_tokens - 1):
                     next_input = torch.tensor([[token_id]], device=self.device, dtype=torch.long)
                     forward_passes += 1
+                    capture_importance = (
+                        importance_scores is not None
+                        and token_importance_interval > 0
+                        and len(generated) % token_importance_interval == 0
+                    )
                     outputs = self.model(
                         input_ids=next_input,
                         past_key_values=past,
                         use_cache=True,
+                        output_attentions=capture_importance,
                     )
+                    if capture_importance:
+                        importance_observations += _accumulate_attention_importance(
+                            importance_scores,
+                            outputs.attentions,
+                            key_count=prompt_len + len(generated),
+                        )
                     logits = outputs.logits[:, -1, :]
                     past = outputs.past_key_values
                     del outputs
@@ -266,7 +398,21 @@ class LocalEngine:
             "tokens_per_second": round(tok_per_sec, 1),
             "vram_allocated_before_mb": round(alloc_before, 1),
             "vram_allocated_after_mb": round(alloc_after, 1),
+            "token_importance_enabled": token_importance,
+            "token_importance_interval": token_importance_interval,
+            "token_importance_observations": importance_observations,
         }
+
+        if importance_scores is not None and importance_observations > 0:
+            all_ids = input_ids + generated
+            raw_scores = importance_scores[: len(all_ids)]
+            self._last_token_importance = _build_token_importance_payload(
+                token_ids=all_ids,
+                prompt_len=prompt_len,
+                raw_scores=raw_scores,
+                renderer=self.renderer,
+                observations=importance_observations,
+            )
 
     def get_attention_weights(self) -> list[tuple[int, torch.Tensor]] | None:
         if self.attention is None:

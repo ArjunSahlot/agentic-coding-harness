@@ -89,26 +89,56 @@ def format_messages(raw_messages: list[dict]) -> list[dict]:
             continue
 
         if role == "user":
-            result.append({
-                "role": "user",
-                "segments": [{"type": "text", "content": content}],
-            })
+            metadata = msg.get("metadata") if isinstance(msg.get("metadata"), dict) else {}
+            if metadata.get("context_insert"):
+                result.append({
+                    "role": "user",
+                    "segments": [{
+                        "type": "context_insert",
+                        "content": content,
+                        "label": metadata.get("label") or "Manual context insert",
+                    }],
+                })
+            else:
+                result.append({
+                    "role": "user",
+                    "segments": [{"type": "text", "content": content}],
+                })
 
         elif role == "assistant":
             segments: list[dict] = []
+            metadata = msg.get("metadata") if isinstance(msg.get("metadata"), dict) else {}
+            importance = metadata.get("token_importance") if isinstance(metadata.get("token_importance"), dict) else None
+            importance_segments = (
+                metadata.get("token_importance_segments")
+                if isinstance(metadata.get("token_importance_segments"), list)
+                else []
+            )
+            importance_by_target = {
+                item.get("target"): item
+                for item in importance_segments
+                if isinstance(item, dict) and isinstance(item.get("target"), str)
+            }
 
             think_match = _THINK_RE.search(content)
             if think_match:
                 thinking = think_match.group(1).strip()
                 if thinking:
-                    segments.append({"type": "thinking", "content": thinking})
+                    thinking_segment = {"type": "thinking", "content": thinking}
+                    if importance_by_target.get("thinking") is not None:
+                        thinking_segment["importance"] = importance_by_target["thinking"]
+                    segments.append(thinking_segment)
                 text_after = content[think_match.end():].strip()
             else:
                 text_after = content.strip()
 
             plain_text, tool_calls = parser.parse(text_after)
             if plain_text:
-                segments.append({"type": "text", "content": plain_text})
+                text_segment = {"type": "text", "content": plain_text}
+                text_importance = importance_by_target.get("text") or importance
+                if text_importance is not None:
+                    text_segment["importance"] = text_importance
+                segments.append(text_segment)
 
             for tc in tool_calls:
                 tc_counter += 1

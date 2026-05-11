@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "The log stream uses Z timestamps. Bucketing should be timezone-aware and then rendered back to a Z suffix so dashboard snapshots are portable across developer machines.",
+      "title": "UTC buckets"
+    },
+    {
+      "detail": "Window boundaries are start-inclusive and end-exclusive. A record exactly on the minute belongs to that minute's bucket, which avoids double counting during incremental refreshes.",
+      "title": "exclusive ends"
+    },
+    {
+      "detail": "Charts need explicit empty windows between observed buckets. Missing rows make line charts visually compress outages and make alert backtests harder to compare.",
+      "title": "empty gaps"
+    },
+    {
+      "detail": "Filtering by minimum severity should use the ordering DEBUG, INFO, WARNING, ERROR, CRITICAL. String comparison is not a valid substitute.",
+      "title": "severity threshold"
+    },
+    {
+      "detail": "The dashboard flattens group dimensions into pipe-joined strings. Missing dimensions should become empty strings rather than crashing the rollup.",
+      "title": "group keys"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "log_window_rollups",
+  "title": "Log Window Rollups"
+}

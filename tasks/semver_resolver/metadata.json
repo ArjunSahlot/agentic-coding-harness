@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 13100,
+  "id": "semver_resolver",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Repair version comparison and constraint resolution for a tiny package resolver.",
+  "tags": [
+    "semver",
+    "sorting",
+    "constraints"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Semver Resolver"
+}

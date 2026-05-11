@@ -161,6 +161,22 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     msg = {"content": raw}
 
                 user_text = msg.get("content", "")
+                if msg.get("type") == "context_insert":
+                    context_text = str(msg.get("content", ""))
+                    if not context_text.strip():
+                        continue
+                    label = str(msg.get("label", "Manual context insert"))[:80]
+                    info.agent.conversation.add_context(context_text, label=label)
+                    await ws.send_json({
+                        "type": "context_inserted",
+                        "data": {
+                            "content": f"[{label}]\n{context_text}",
+                            "label": label,
+                            "chars": len(context_text),
+                        },
+                    })
+                    continue
+
                 if not user_text:
                     continue
 
@@ -171,9 +187,10 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
                 temperature = msg.get("temperature", 0.6)
                 max_tokens = msg.get("max_tokens", 4096)
+                token_importance = bool(msg.get("token_importance", False))
 
                 await _run_agent_turn(
-                    ws, info, user_text, temperature, max_tokens
+                    ws, info, user_text, temperature, max_tokens, token_importance
                 )
 
         except WebSocketDisconnect:
@@ -202,6 +219,7 @@ async def _run_agent_turn(
     user_text: str,
     temperature: float,
     max_tokens: int,
+    token_importance: bool,
 ) -> None:
     """Execute one full agent turn with multi-round tool use and approval."""
     agent = info.agent
@@ -216,6 +234,7 @@ async def _run_agent_turn(
                 for ev in agent.generate_round(
                     temperature=temperature,
                     max_new_tokens=max_tokens,
+                    token_importance=token_importance,
                 ):
                     loop.call_soon_threadsafe(event_queue.put_nowait, ev.to_dict())
             except Exception as exc:

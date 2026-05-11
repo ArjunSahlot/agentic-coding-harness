@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "A direct dependency can pull in a problematic transitive package. Auditing only the root package misses the cases policy reviewers care about.",
+      "title": "transitive graph"
+    },
+    {
+      "detail": "Package metadata often uses human aliases such as Apache 2 or BSD 3-Clause. Normalize common aliases before comparing against SPDX policy names.",
+      "title": "alias normalization"
+    },
+    {
+      "detail": "A package licensed as MIT OR GPL-3.0 can be consumed under MIT if MIT is allowed. The audit should not fail just because one alternative is denied.",
+      "title": "OR expressions"
+    },
+    {
+      "detail": "A conjunctive expression requires satisfying every part. If any part is denied, the package is a violation with reason denied.",
+      "title": "AND expressions"
+    },
+    {
+      "detail": "Legal approvals are package-specific. An exception for one LGPL package should not broadly allow LGPL across the graph.",
+      "title": "package exceptions"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "license_audit",
+  "title": "License Audit"
+}

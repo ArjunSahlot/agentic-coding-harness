@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "A zero-sales day while out of stock is missing demand, not low demand. Excluding those days avoids under-ordering popular items.",
+      "title": "stockout demand"
+    },
+    {
+      "detail": "Target stock includes both lead time and safety days. Ignoring safety days makes the recommender look good in quiet periods and fail during demand spikes.",
+      "title": "lead plus safety"
+    },
+    {
+      "detail": "Units already on order should reduce the recommended quantity. Otherwise buyers double-order when a purchase order is already in flight.",
+      "title": "open orders"
+    },
+    {
+      "detail": "Vendors ship fixed pack sizes. Positive recommendations should round up to a pack multiple unless capped by max stock.",
+      "title": "pack rounding"
+    },
+    {
+      "detail": "Warehouse max stock is a hard cap. Minimum order quantities apply only when a positive recommendation remains possible under that cap.",
+      "title": "caps and minimums"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "inventory_forecast",
+  "title": "Inventory Forecast"
+}

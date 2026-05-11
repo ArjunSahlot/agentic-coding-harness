@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Three equal revenue lines sharing a ten dollar payment create a leftover cent after flooring exact shares. The cent must go to the lexically first line id so nightly invoice exports remain stable.",
+      "title": "fractional cents"
+    },
+    {
+      "detail": "Customer credits arrive as positive source amounts because the upstream accounting feed stores the sign in the payment kind. Allocation rows carry the signed effect, so credits are negative allocations.",
+      "title": "credit memo sign"
+    },
+    {
+      "detail": "Discount and zero-dollar rows stay in invoice reports, but they never earn a share of customer cash and never dilute the denominator used for positive charge lines.",
+      "title": "adjustment lines"
+    },
+    {
+      "detail": "A card payment, an account credit, and a manual write-off may all touch the same invoice. Allocation rows should preserve payment order and payment ids so reconciliations can be traced.",
+      "title": "multiple tenders"
+    },
+    {
+      "detail": "Binary floats have caused one-cent drift in production exports. All money arithmetic should use Decimal or integer cents until the final Decimal dollar values are built.",
+      "title": "decimal safety"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "ledger_proration",
+  "title": "Ledger Proration"
+}

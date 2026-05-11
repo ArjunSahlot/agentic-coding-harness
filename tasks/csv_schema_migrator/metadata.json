@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 11800,
+  "id": "csv_schema_migrator",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix a legacy CSV row migrator with aliases, typed coercion, and row-level error reporting.",
+  "tags": [
+    "csv",
+    "data-cleaning",
+    "validation"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "CSV Schema Migrator"
+}

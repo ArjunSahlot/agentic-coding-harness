@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Legacy customer exports used several header names for the same field. The migrator should look up canonical names and aliases without preserving unknown columns in the cleaned output.",
+      "title": "aliases from old exports"
+    },
+    {
+      "detail": "A non-empty string such as 'no' is truthy in Python but false in the data contract. The boolean coercer must map accepted words explicitly and reject ambiguous values.",
+      "title": "false-like booleans"
+    },
+    {
+      "detail": "Support staff imported files from spreadsheet tools that emitted ISO dates, US slash dates, and day-month-name dates. The canonical record always stores ISO dates.",
+      "title": "date formats"
+    },
+    {
+      "detail": "Bad rows should not poison the entire migration. Accumulate errors with one-based row numbers so support can find the source line in the original CSV.",
+      "title": "row level errors"
+    },
+    {
+      "detail": "Optional fields may be absent or blank. They should appear in valid records as None so downstream code can rely on a stable canonical key set.",
+      "title": "partial optional data"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "csv_schema_migrator",
+  "title": "CSV Schema Migrator"
+}

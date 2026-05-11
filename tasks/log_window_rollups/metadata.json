@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 10900,
+  "id": "log_window_rollups",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix UTC log parsing and window aggregation for service health dashboards.",
+  "tags": [
+    "logs",
+    "datetime",
+    "aggregation"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Log Window Rollups"
+}

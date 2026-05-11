@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Templates render into HTML emails. Variables must be escaped by default so user-provided names and titles cannot inject markup.",
+      "title": "default escaping"
+    },
+    {
+      "detail": "Some snippets are pre-rendered by trusted code. The safe filter is the explicit escape hatch and should not leak to unrelated variables.",
+      "title": "safe values"
+    },
+    {
+      "detail": "Simple receipt templates need a loop variable and loop.index for numbering. The implementation should create a child context per iteration instead of mutating shared caller state permanently.",
+      "title": "loop context"
+    },
+    {
+      "detail": "If/else blocks only need dotted truthy lookup. Avoid eval or arbitrary Python expressions; deterministic lookup is enough for the benchmark.",
+      "title": "conditionals"
+    },
+    {
+      "detail": "The default filter receives a quoted string argument. Missing values and None should use it, while present falsey values such as 0 may still be meaningful.",
+      "title": "filters with arguments"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "template_engine",
+  "title": "Mini Template Engine"
+}

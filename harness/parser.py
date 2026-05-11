@@ -14,25 +14,17 @@ class ParsedToolCall:
 class ToolCallParser:
     """Parse tool calls from model output.
 
-    Default format matches the Qwen chat-template convention::
+    Tool calls are JSON objects wrapped in ``<tool_call>`` tags::
 
         <tool_call>
-        <function=function_name>
-        <parameter=param1>
-        value1
-        </parameter>
-        </function>
+        {"name": "list_directory", "arguments": {"path": "."}}
         </tool_call>
 
     Subclass and override :meth:`parse` for other formats.
     """
 
     TOOL_CALL_RE = re.compile(
-        r"<tool_call>\s*<function=(\w+)>(.*?)</function>\s*</tool_call>",
-        re.DOTALL,
-    )
-    PARAM_RE = re.compile(
-        r"<parameter=(\w+)>\s*(.*?)\s*</parameter>",
+        r"<tool_call>\s*(.*?)\s*</tool_call>",
         re.DOTALL,
     )
 
@@ -46,29 +38,37 @@ class ToolCallParser:
         last_end = 0
 
         for m in self.TOOL_CALL_RE.finditer(text):
+            parsed = self._parse_json_call(m.group(1).strip())
+            if parsed is None:
+                continue
+
             plain_parts.append(text[last_end : m.start()])
             last_end = m.end()
-
-            fn_name = m.group(1)
-            body = m.group(2)
-            args = {}
-            for pm in self.PARAM_RE.finditer(body):
-                key = pm.group(1)
-                raw = pm.group(2).strip()
-                args[key] = self._coerce(raw)
-            calls.append(ParsedToolCall(name=fn_name, arguments=args))
+            calls.append(parsed)
 
         plain_parts.append(text[last_end:])
         plain = "".join(plain_parts).strip()
         return plain, calls
 
     def has_tool_call(self, text: str) -> bool:
-        return bool(self.TOOL_CALL_RE.search(text))
+        return any(
+            self._parse_json_call(m.group(1).strip()) is not None
+            for m in self.TOOL_CALL_RE.finditer(text)
+        )
 
     @staticmethod
-    def _coerce(raw: str):
-        """Try to parse JSON values; fall back to string."""
+    def _parse_json_call(raw: str) -> ParsedToolCall | None:
         try:
-            return json.loads(raw)
+            payload = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
-            return raw
+            return None
+
+        if not isinstance(payload, dict):
+            return None
+
+        name = payload.get("name")
+        arguments = payload.get("arguments", {})
+        if not isinstance(name, str) or not isinstance(arguments, dict):
+            return None
+
+        return ParsedToolCall(name=name, arguments=arguments)

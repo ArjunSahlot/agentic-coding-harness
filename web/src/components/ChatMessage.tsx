@@ -1,7 +1,10 @@
 import ToolCall from "./ToolCall.tsx";
+import type { TokenImportancePayload } from "./TokenImportance.tsx";
 
-export type ThinkingSegment = { type: "thinking"; content: string };
-export type TextSegment = { type: "text"; content: string };
+export type ThinkingSegment = { type: "thinking"; content: string; importance?: TokenImportancePayload };
+export type TextSegment = { type: "text"; content: string; importance?: TokenImportancePayload };
+export type TokenImportanceSegment = TokenImportancePayload & { type: "token_importance" };
+export type ContextInsertSegment = { type: "context_insert"; content: string; label?: string; chars?: number };
 export type ToolCallSegment = {
   type: "tool_call";
   id: string;
@@ -11,7 +14,7 @@ export type ToolCallSegment = {
   output?: string;
 };
 
-export type Segment = ThinkingSegment | TextSegment | ToolCallSegment;
+export type Segment = ThinkingSegment | TextSegment | TokenImportanceSegment | ContextInsertSegment | ToolCallSegment;
 
 export type Message = {
   role: "user" | "assistant";
@@ -34,11 +37,32 @@ export default function ChatMessage({ message, isStreaming, onToolApproval }: Pr
   const segments = message.segments;
 
   if (isUser) {
+    const context = segments.find((s) => s.type === "context_insert") as ContextInsertSegment | undefined;
+    if (context) {
+      return (
+        <div className="animate-in flex justify-end">
+          <div className="max-w-[min(85%,38rem)] rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-slate-700 shadow-sm">
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-teal-700">
+                {context.label || "Context insert"}
+              </span>
+              <span className="text-[10px] tabular-nums text-teal-700/70">
+                {(context.chars ?? context.content.length).toLocaleString()} chars
+              </span>
+            </div>
+            <div className="max-h-28 overflow-y-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-slate-600">
+              {context.content}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     const text = segments.find((s) => s.type === "text") as TextSegment | undefined;
     return (
       <div className="animate-in flex justify-end">
-        <div className="max-w-[min(85%,38rem)] rounded-2xl bg-violet-500/[0.08] border border-violet-500/10
-                        text-zinc-100 px-4 py-2.5 text-[13.5px] leading-[1.7] whitespace-pre-wrap">
+        <div className="max-w-[min(85%,38rem)] rounded-2xl border border-blue-200/80 bg-blue-600
+                        text-white shadow-lg shadow-blue-600/10 px-4 py-2.5 text-[13.5px] leading-[1.7] whitespace-pre-wrap">
           {text?.content}
         </div>
       </div>
@@ -50,7 +74,7 @@ export default function ChatMessage({ message, isStreaming, onToolApproval }: Pr
 
   return (
     <div className="animate-in flex justify-start">
-      <div className="max-w-[min(90%,44rem)] text-[13.5px] leading-[1.7] text-zinc-300 px-1 py-1 space-y-2">
+      <div className="max-w-[min(92%,46rem)] text-[13.5px] leading-[1.7] text-slate-700 px-1 py-1 space-y-3">
         {segments.map((seg, i) => {
           const isLast = i === segments.length - 1;
 
@@ -61,15 +85,15 @@ export default function ChatMessage({ message, isStreaming, onToolApproval }: Pr
             return (
               <details key={i} className="group" open={isActiveThinking}>
                 <summary className="cursor-pointer select-none text-[11px] font-medium text-zinc-500
-                                    hover:text-zinc-400 transition-colors duration-150 flex items-center gap-1.5 py-0.5">
-                  <svg className="size-3 text-zinc-600 transition-transform duration-200 group-open:rotate-90"
+                                    hover:text-slate-700 transition-colors duration-150 flex items-center gap-1.5 py-0.5">
+                  <svg className="size-3 text-slate-400 transition-transform duration-200 group-open:rotate-90"
                        viewBox="0 0 16 16" fill="currentColor">
                     <path d="M6.5 3.5l5 4.5-5 4.5V3.5z"/>
                   </svg>
                   {isActiveThinking ? "Thinking..." : "Thought process"}
                 </summary>
-                <div className="mt-1.5 whitespace-pre-wrap font-mono text-[11px] text-zinc-500/80
-                                border-l-2 border-zinc-800 pl-3 ml-0.5 max-h-64 overflow-y-auto leading-relaxed">
+                <div className="mt-1.5 whitespace-pre-wrap font-mono text-[11px] text-slate-500
+                                border-l-2 border-slate-200 pl-3 ml-0.5 max-h-64 overflow-y-auto leading-relaxed">
                   {cleaned}
                   {isActiveThinking && <span className="typing-cursor" />}
                 </div>
@@ -85,6 +109,10 @@ export default function ChatMessage({ message, isStreaming, onToolApproval }: Pr
                 {isStreaming && isLast && isLastText && <span className="typing-cursor" />}
               </div>
             );
+          }
+
+          if (seg.type === "token_importance") {
+            return null;
           }
 
           if (seg.type === "tool_call") {
@@ -110,8 +138,8 @@ export default function ChatMessage({ message, isStreaming, onToolApproval }: Pr
         )}
 
         {message.error && (
-          <div className="mt-2 rounded-lg bg-red-500/[0.07] border border-red-500/20 px-3 py-2
-                          text-[12px] text-red-400/90 font-mono">
+          <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2
+                          text-[12px] text-red-700 font-mono">
             {message.error}
           </div>
         )}

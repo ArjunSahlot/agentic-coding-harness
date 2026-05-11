@@ -9,6 +9,8 @@ export type AgentEvent = {
     | "tool_call_pending"
     | "tool_result"
     | "tool_rejected"
+    | "token_importance"
+    | "context_inserted"
     | "error"
     | "done";
   data: string | Record<string, unknown>;
@@ -66,13 +68,19 @@ export function useWebSocket(
   }, [conversationId]);
 
   const send = useCallback(
-    (content: string, opts?: { temperature?: number; max_tokens?: number }) => {
+    (content: string, opts?: { temperature?: number; max_tokens?: number; token_importance?: boolean }) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ content, ...opts }));
       }
     },
     [],
   );
+
+  const sendContextInsert = useCallback((content: string, label?: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "context_insert", content, label }));
+    }
+  }, []);
 
   const sendToolApproval = useCallback((id: string, approved: boolean) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -84,5 +92,5 @@ export function useWebSocket(
 
   const clearLog = useCallback(() => setEventLog([]), []);
 
-  return { status, send, sendToolApproval, eventLog, clearLog };
+  return { status, send, sendToolApproval, sendContextInsert, eventLog, clearLog };
 }

@@ -1,0 +1,18 @@
+{
+  "dependency_policy": "standard-library-only",
+  "estimated_context_tokens": 12100,
+  "id": "feature_flags",
+  "language": "python",
+  "scoring": {
+    "max_score": "number_of_tests",
+    "type": "unittest"
+  },
+  "summary": "Fix a deterministic feature flag evaluator with environments, overrides, rules, and percentage rollout.",
+  "tags": [
+    "feature-flags",
+    "hashing",
+    "rules"
+  ],
+  "test_command": "python -m unittest discover -s tests -v",
+  "title": "Feature Flag Evaluator"
+}

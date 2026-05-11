@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "detail": "Staging and production can have different defaults and rules. The evaluator should read the requested environment and fall back deliberately rather than ignoring environment blocks.",
+      "title": "environment layering"
+    },
+    {
+      "detail": "Python's hash is process-randomized and random seeding has cross-flag collisions. Rollout buckets must use the specified SHA-256 flag/user key hash.",
+      "title": "stable rollout"
+    },
+    {
+      "detail": "Rules may target user segments or attribute equality. The first matching rule provides a value, then explicit overrides can still replace it.",
+      "title": "rule matching"
+    },
+    {
+      "detail": "Support staff use overrides to force-enable or block individual users during incidents. Overrides are the final authority for a flag in an environment.",
+      "title": "override precedence"
+    },
+    {
+      "detail": "An unknown flag should evaluate to false rather than raising, which keeps client code resilient during staged config rollouts.",
+      "title": "unknown flags"
+    }
+  ],
+  "notes": [
+    "These notes are not executed directly; the unittest suite is the scorer.",
+    "They are included so agents can practice selecting relevant context.",
+    "A correct implementation should be deterministic across repeated runs."
+  ],
+  "task": "feature_flags",
+  "title": "Feature Flag Evaluator"
+}
